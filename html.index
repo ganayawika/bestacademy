@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Interaktif Bahasa Inggris SMP</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .quiz-card { background: white; width: 100%; max-width: 600px; padding: 28px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 { color: #1e293b; font-size: 20px; margin-bottom: 6px; }
+        .header p { color: #64748b; font-size: 14px; }
+        
+        .form-group { margin-bottom: 16px; text-align: left; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #334155; font-size: 14px; }
+        .form-group input { width: 100%; padding: 10px 14px; border: 2px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; }
+        .form-group input:focus { border-color: #4f46e5; }
+        .start-btn { background: #4f46e5; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: 600; width: 100%; cursor: pointer; }
+        .start-btn:hover { background: #4338ca; }
+
+        .progress-container { margin-bottom: 20px; }
+        .progress-text { display: flex; justify-content: space-between; font-size: 13px; color: #64748b; margin-bottom: 6px; font-weight: 600; }
+        .progress-bar { width: 100%; background: #e2e8f0; height: 10px; border-radius: 5px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #4f46e5; width: 0%; transition: width 0.3s ease; }
+        .question-title { font-size: 16px; font-weight: 600; color: #334155; margin-bottom: 16px; line-height: 1.5; }
+        .options-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .option-btn { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; text-align: left; font-size: 14px; color: #1e293b; cursor: pointer; transition: all 0.2s; }
+        .option-btn:hover:not([disabled]) { background: #eef2ff; border-color: #a5b4fc; }
+        .option-btn.correct { background: #dcfce7 !important; border-color: #22c55e !important; color: #15803d !important; font-weight: 600; }
+        .option-btn.wrong { background: #fee2e2 !important; border-color: #ef4444 !important; color: #b91c1c !important; }
+        .explanation { display: none; background: #f1f5f9; border-left: 4px solid #3b82f6; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; color: #334155; line-height: 1.4; }
+        .footer { display: flex; justify-content: flex-end; }
+        .next-btn { background: #4f46e5; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: none; }
+        .next-btn:hover { background: #4338ca; }
+        
+        .result-screen { text-align: center; display: none; }
+        .result-screen h2 { color: #1e293b; margin-bottom: 8px; }
+        .result-screen p { color: #64748b; font-size: 14px; }
+        .score-circle { width: 110px; height: 110px; border-radius: 50%; background: #eef2ff; color: #4f46e5; display: flex; justify-content: center; align-items: center; font-size: 32px; font-weight: bold; margin: 20px auto; border: 4px solid #a5b4fc; }
+        .status-msg { margin-top: 15px; font-size: 14px; font-weight: 600; color: #0284c7; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-card">
+    <div class="header">
+        <h1>Kuis Bahasa Inggris SMP</h1>
+        <p>Materi: Asking Object's Name (This, That, These)</p>
+    </div>
+
+    <!-- Layar Identitas Siswa -->
+    <div id="identity-screen">
+        <div class="form-group">
+            <label for="student-name">Nama Lengkap Siswa:</label>
+            <input type="text" id="student-name" placeholder="Masukkan nama Anda..." required>
+        </div>
+        <div class="form-group">
+            <label for="student-class">Kelas / No. Absen:</label>
+            <input type="text" id="student-class" placeholder="Contoh: 7A / 12" required>
+        </div>
+        <button class="start-btn" onclick="startQuiz()">Mulai Kuis</button>
+    </div>
+
+    <!-- Layar Kuis -->
+    <div id="quiz-container" style="display: none;">
+        <div class="progress-container">
+            <div class="progress-text">
+                <span id="question-number">Soal 1 dari 10</span>
+                <span id="score-text">Skor: 0</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="question-title" id="question-title">Loading...</div>
+        <div class="options-container" id="options-container"></div>
+        <div class="explanation" id="explanation"></div>
+
+        <div class="footer">
+            <button class="next-btn" id="next-btn" onclick="nextQuestion()">Soal Selanjutnya</button>
+        </div>
+    </div>
+
+    <!-- Layar Hasil -->
+    <div class="result-screen" id="result-screen">
+        <h2>Kuis Selesai!</h2>
+        <p>Terima kasih telah mengerjakan kuis ini.</p>
+        <div class="score-circle" id="final-score">0</div>
+        <p id="result-message"></p>
+        <p class="status-msg" id="status-msg">Mengirim jawaban ke Google Sheets...</p>
+    </div>
+</div>
+
+<script>
+    // PASTE URL WEB APP APPS SCRIPT ANDA DI SINI
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOsYSA1L4iM4GNUaOz4m9o7JBAnXrJzQaNV3IUDWhd8mi71oX0ijhsBc42LIBHSvD9ng/exec";
+
+    let studentName = "";
+    let studentClass = "";
+
+    const questions = [
+        {
+            question: "1. Rian memegang sebuah pensil di tangannya. Kalimat tanya apa yang paling tepat diucapkan Rian?",
+            options: ["What is this?", "What are these?", "What is that?", "What are those?"],
+            answer: 0,
+            explanation: "<b>Penjelasan:</b> Untuk 1 benda (tunggal) yang posisinya dekat/dipegang, gunakan <i>'What is this?'</i>."
+        },
+        {
+            question: "2. Budi menunjuk ke arah jam dinding yang berada jauh di tembok. Budi: 'What is ___?'",
+            options: ["this", "that", "these", "those"],
+            answer: 1,
+            explanation: "<b>Penjelasan:</b> Untuk 1 benda yang posisinya jauh, kata tunjuk yang digunakan adalah <i>'that'</i> (itu)."
+        },
+        {
+            question: "3. Ani memegang 3 buku di mejanya. Dino: 'What are these?' Ani: '___ are books.'",
+            options: ["This", "That", "These", "Those"],
+            answer: 2,
+            explanation: "<b>Penjelasan:</b> Karena pertanyaannya menggunakan <i>'these'</i> (benda jamak dan dekat), jawabannya juga diawali dengan <i>'These'</i>."
+        },
+        {
+            question: "4. Manakah kalimat yang BENAR untuk menanyakan 1 buah tas yang ada di dekat kamu?",
+            options: ["What is this?", "What are this?", "What is these?", "What are these?"],
+            answer: 0,
+            explanation: "<b>Penjelasan:</b> Benda tunggal dekat menggunakan to-be <i>'is'</i> dan kata tunjuk <i>'this'</i>."
+        },
+        {
+            question: "5. Dino: 'What are these?' — Sinta: 'These are ___.' (Isilah dengan kata yang tepat)",
+            options: ["pencil", "a pencil", "pencils", "an pencil"],
+            answer: 2,
+            explanation: "<b>Penjelasan:</b> Kalimat bertema <i>'these'</i> menunjukkan benda jamak (lebih dari satu), sehingga kata benda harus ditambah akhiran -s (<i>pencils</i>)."
+        },
+        {
+            question: "6. Kamu sedang memegang sebuah apel dan bertanya pada temanmu. Apa yang kamu ucapkan?",
+            options: ["What is this?", "What is that?", "What are these?", "What are those?"],
+            answer: 0,
+            explanation: "<b>Penjelasan:</b> Memegang 1 apel = Benda tunggal di jarak dekat, maka gunakan <i>'What is this?'</i>."
+        },
+        {
+            question: "7. Susunlah kata-kata acak ini menjadi kalimat tanya yang benar: [is] - [that] - [What] - [?]",
+            options: ["What that is?", "What is that?", "Is that what?", "That is what?"],
+            answer: 1,
+            explanation: "<b>Penjelasan:</b> Pola kalimat tanya yang benar adalah: Question Word (What) + to-be (is) + kata tunjuk (that) + ?"
+        },
+        {
+            question: "8. Susunlah kata-kata acak ini untuk jawaban benda jamak: [are] - [These] - [markers]",
+            options: ["These are markers.", "Markers are these.", "These markers are.", "Are these markers."],
+            answer: 0,
+            explanation: "<b>Penjelasan:</b> Pola kalimat pernyataan yang benar adalah: Kata tunjuk (These) + to-be (are) + nama benda (markers)."
+        },
+        {
+            question: "9. Doni memegang sebuah penghapus di depannya dan berkata: 'That is an eraser.' Apakah kalimat Doni benar?",
+            options: [
+                "Salah, seharusnya 'This is an eraser.'",
+                "Benar, karena jumlahnya satu.",
+                "Salah, seharusnya 'These are erasers.'",
+                "Benar, karena penunjuk 'that' bebas dipakai."
+            ],
+            answer: 0,
+            explanation: "<b>Penjelasan:</b> Doni salah karena penghapus dipegang (dekat). Seharusnya menggunakan <i>'This is an eraser'</i>, bukan <i>'that'</i>."
+        },
+        {
+            question: "10. Sinta menunjuk 5 spidol yang ada di dekat tangannya dan bertanya: 'What are these?' Apakah pertanyaan Sinta benar?",
+            options: [
+                "Ya, benar karena bendanya banyak dan jaraknya dekat.",
+                "Tidak, seharusnya 'What is this?'.",
+                "Tidak, seharusnya 'What are those?'.",
+                "Ya, tetapi hanya berlaku untuk 1 spidol."
+            ],
+            answer: 0,
+            explanation: "<b>Penjelasan:</b> Pertanyaan Sinta sudah sangat tepat. <i>'These'</i> digunakan untuk benda jamak (5 spidol) yang berada dekat."
+        }
+    ];
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    function startQuiz() {
+        const nameInput = document.getElementById("student-name").value.trim();
+        const classInput = document.getElementById("student-class").value.trim();
+
+        if (!nameInput || !classInput) {
+            alert("Harap isi Nama dan Kelas terlebih dahulu!");
+            return;
+        }
+
+        studentName = nameInput;
+        studentClass = classInput;
+
+        document.getElementById("identity-screen").style.display = "none";
+        document.getElementById("quiz-container").style.display = "block";
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        const currentQ = questions[currentQuestionIndex];
+        
+        document.getElementById("question-number").innerText = `Soal ${currentQuestionIndex + 1} dari ${questions.length}`;
+        document.getElementById("progress-fill").style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+        
+        document.getElementById("question-title").innerText = currentQ.question;
+        const optionsContainer = document.getElementById("options-container");
+        optionsContainer.innerHTML = "";
+        document.getElementById("explanation").style.display = "none";
+        document.getElementById("next-btn").style.display = "none";
+
+        currentQ.options.forEach((option, index) => {
+            const btn = document.createElement("button");
+            btn.classList.add("option-btn");
+            btn.innerText = option;
+            btn.onclick = () => selectOption(index);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    function selectOption(selectedIndex) {
+        const currentQ = questions[currentQuestionIndex];
+        const buttons = document.getElementsByClassName("option-btn");
+
+        for (let btn of buttons) {
+            btn.disabled = true;
+        }
+
+        if (selectedIndex === currentQ.answer) {
+            buttons[selectedIndex].classList.add("correct");
+            score += 10;
+            document.getElementById("score-text").innerText = `Skor: ${score}`;
+        } else {
+            buttons[selectedIndex].classList.add("wrong");
+            buttons[currentQ.answer].classList.add("correct");
+        }
+
+        const explanationText = document.getElementById("explanation");
+        explanationText.innerHTML = currentQ.explanation;
+        explanationText.style.display = "block";
+        document.getElementById("next-btn").style.display = "block";
+    }
+
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < questions.length) {
+            loadQuestion();
+        } else {
+            showResult();
+        }
+    }
+
+    function showResult() {
+        document.getElementById("quiz-container").style.display = "none";
+        document.getElementById("result-screen").style.display = "block";
+        document.getElementById("final-score").innerText = score;
+
+        const resultMsg = document.getElementById("result-message");
+        if (score === 100) {
+            resultMsg.innerText = "Sempurna! Kamu telah menguasai materi ini.";
+        } else if (score >= 70) {
+            resultMsg.innerText = "Bagus sekali! Kamu paham konsep dasar materi ini.";
+        } else {
+            resultMsg.innerText = "Pelajari lagi perbedaan This, That, dan These ya!";
+        }
+
+        sendDataToGoogleSheets();
+    }
+
+    function sendDataToGoogleSheets() {
+        const statusMsg = document.getElementById("status-msg");
+
+        if (SCRIPT_URL === "GANTI_DENGAN_URL_WEB_APP_ANDA" || !SCRIPT_URL) {
+            statusMsg.style.color = "#dc2626";
+            statusMsg.innerText = "⚠️ Jawaban tidak tersimpan: URL Google Apps Script belum dipasang.";
+            return;
+        }
+
+        const formData = new URLSearchParams();
+        formData.append("nama", studentName);
+        formData.append("kelas", studentClass);
+        formData.append("skor", score);
+
+        fetch(SCRIPT_URL, {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.result === "success") {
+                statusMsg.style.color = "#16a34a";
+                statusMsg.innerText = "✓ Nilai dan jawaban berhasil tersimpan di Google Sheet (tes1)!";
+            } else {
+                statusMsg.style.color = "#dc2626";
+                statusMsg.innerText = "✕ Gagal menyimpan data: " + data.error;
+            }
+        })
+        .catch(error => {
+            statusMsg.style.color = "#dc2626";
+            statusMsg.innerText = "✕ Terjadi kesalahan saat menghubungkan ke Google Sheet.";
+            console.error("Error:", error);
+        });
+    }
+</script>
+
+</body>
+</html>
